@@ -1,0 +1,233 @@
+{
+  "categories": {
+    "user_settings": {
+      "title": "用户设置",
+      "settings": {
+        "listen_list": {
+          "value": [],
+          "type": "array",
+          "description": "要监听的用户QQ号列表（留空表示禁用主动消息绑定用户）"
+        },
+        "group_chat_config": {
+          "value": [],
+          "type": "array",
+          "description": "群聊配置（发布版本默认为空，用户可自行添加）"
+        }
+      }
+    },
+    "llm_settings": {
+      "title": "大语言模型配置",
+      "settings": {
+        "base_url": {
+          "value": "<YOUR_LLM_BASE_URL>"
+        },
+        "model": {
+          "value": "<YOUR_LLM_MODEL_NAME>"
+        },
+        "api_key": {
+          "value": "${LLM_API_KEY}"
+        },
+        "max_tokens": {
+          "value": 4000
+        },
+        "temperature": {
+          "value": 0.8
+        },
+        "auto_model_switch": {
+          "value": false,
+          "type": "boolean"
+        }
+      }
+    },
+    "media_settings": {
+      "title": "媒体设置",
+      "settings": {
+        "text_to_speech": {
+          "tts_api_key": {
+            "value": "${TTS_API_KEY}",
+            "type": "string",
+            "description": "TTS 服务 API Key"
+          },
+          "tts_model_id": {
+            "value": "<TTS_MODEL_ID>",
+            "type": "string",
+            "description": "使用的 TTS 模型 ID"
+          },
+          "voice_dir": {
+            "value": "data/voices",
+            "type": "string",
+            "description": "语音文件存储目录"
+          }
+        },
+        "image_recognition": {
+          "base_url": {
+            "value": "<VISION_API_BASE_URL>",
+            "type": "string",
+            "description": "图像识别 API 基础 URL"
+          },
+          "api_key": {
+            "value": "${VISION_API_KEY}",
+            "type": "string",
+            "description": "图像识别 API 密钥",
+            "is_secret": true
+          },
+          "model": {
+            "value": "<VISION_MODEL_NAME>",
+            "type": "string",
+            "description": "图像识别模型"
+          },
+          "temperature": {
+            "value": 0.7,
+            "type": "number",
+            "description": "图像识别温度参数",
+            "min": 0,
+            "max": 1
+          }
+        },
+        "image_generation": {
+          "model": {
+            "value": "<IMAGE_GEN_MODEL_NAME>",
+            "type": "string",
+            "description": "图像生成模型"
+          },
+          "temp_dir": {
+            "value": "data/images/temp",
+            "type": "string",
+            "description": "临时图片存储目录"
+          }
+        }
+      }
+    },
+    "intent_recognition_settings": {
+      "title": "意图识别配置",
+      "settings": {
+        "base_url": {
+          "value": "<INTENT_API_BASE_URL>",
+          "type": "string"
+        },
+        "api_key": {
+          "value": "${INTENT_API_KEY}",
+          "type": "string",
+          "is_secret": true
+        },
+        "model": {
+          "value": "<INTENT_MODEL_NAME>",
+          "type": "string"
+        },
+        "temperature": {
+          "value": 0.0,
+          "type": "number",
+          "description": "意图识别温度（固定）",
+          "min": 0.0,
+          "max": 0.0,
+          "readonly": true
+        }
+      }
+    },
+    "behavior_settings": {
+      "title": "行为设置",
+      "settings": {
+        "auto_message": {
+          "enabled": {
+            "value": false,
+            "type": "boolean",
+            "description": "是否启用自动主动消息（默认关闭）"
+          },
+          "content": {
+            "value": "请以你的人设身份发送一条贴近生活、自然的消息。",
+            "type": "string",
+            "description": "自动消息提示词（可自定义）"
+          },
+          "countdown": {
+            "min_hours": {
+              "value": 1.0,
+              "type": "number",
+              "description": "最小倒计时时间（小时）"
+            },
+            "max_hours": {
+              "value": 3.0,
+              "type": "number",
+              "description": "最大倒计时时间（小时）"
+            }
+          }
+        },
+        "quiet_time": {
+          "start": {
+            "value": "23:00",
+            "type": "string",
+            "description": "安静时间开始"
+          },
+          "end": {
+            "value": "07:00",
+            "type": "string",
+            "description": "安静时间结束"
+          }
+        },
+        "message_queue": {
+          "timeout": {
+            "value": 10,
+            "type": "number",
+            "description": "消息队列等待时间（秒）",
+            "min": 0,
+            "max": 20
+          }
+        },
+        "context": {
+          "max_groups": {
+            "value": 30,
+            "type": "number",
+            "description": "最大上下文轮数"
+          },
+          "avatar_dir": {
+            "value": "data/avatars/ATRI",
+            "type": "string",
+            "description": "默认人设目录（请替换为你自己的）"
+          }
+        }
+      }
+    },
+    "network_search_settings": {
+      "title": "网络搜索设置",
+      "settings": {
+        "weblens_enabled": {
+          "value": false,
+          "type": "boolean"
+        },
+        "api_key": {
+          "value": "${SEARCH_API_KEY}"
+        },
+        "search_enabled": {
+          "value": false,
+          "type": "boolean"
+        },
+        "base_url": {
+          "value": "",
+          "type": "string",
+          "description": "网络搜索 API 基础 URL（留空则禁用）"
+        }
+      }
+    },
+    "schedule_settings": {
+      "title": "定时任务配置",
+      "settings": {
+        "tasks": {
+          "value": [],
+          "type": "array",
+          "description": "定时任务列表（发布版本为空）"
+        }
+      }
+    },
+    "auth_settings": {
+      "title": "认证设置",
+      "settings": {
+        "admin_password": {
+          "value": "",
+            "type": "string",
+            "description": "管理员密码（请存储哈希后再填入）",
+            "is_secret": true
+        }
+      }
+    }
+  },
+  "worldbooks": []
+}

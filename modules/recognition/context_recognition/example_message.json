@@ -1,0 +1,82 @@
+{
+  "example_1": {
+    "input": {
+      "role": "user",
+      "content": "{\"user_message\": \"你那边天气怎么样？\", \"bot_reply\": \"我这边下雨了，有点冷\"}"
+    },
+    "output": {
+      "role": "assistant",
+      "content": "{\"has_context\": true, \"context_type\": \"weather\", \"context_name\": \"rain\", \"keywords\": [\"下雨\", \"冷\"], \"should_send_emoji\": true, \"confidence\": 0.95, \"reason\": \"Bot提到下雨，适合发送雨天表情\"}"
+    }
+  },
+  "example_2": {
+    "input": {
+      "role": "user",
+      "content": "{\"user_message\": \"外面下雨了\", \"bot_reply\": \"是吗？记得带伞哦\"}"
+    },
+    "output": {
+      "role": "assistant",
+      "content": "{\"has_context\": true, \"context_type\": \"weather\", \"context_name\": \"rain\", \"keywords\": [\"下雨\", \"带伞\"], \"should_send_emoji\": true, \"confidence\": 0.9, \"reason\": \"用户说下雨，Bot关心带伞，轻松氛围\"}"
+    }
+  },
+  "example_3": {
+    "input": {
+      "role": "user",
+      "content": "{\"user_message\": \"下雨天心情不好\", \"bot_reply\": \"怎么了？发生什么事了？\"}"
+    },
+    "output": {
+      "role": "assistant",
+      "content": "{\"has_context\": true, \"context_type\": \"weather\", \"context_name\": \"rain\", \"keywords\": [\"下雨\"], \"should_send_emoji\": false, \"confidence\": 0.8, \"reason\": \"虽然提到下雨，但氛围负面，不适合发表情\"}"
+    }
+  },
+  "example_4": {
+    "input": {
+      "role": "user",
+      "content": "{\"user_message\": \"你在干嘛？\", \"bot_reply\": \"我在看书呢，看得好入迷\"}"
+    },
+    "output": {
+      "role": "assistant",
+      "content": "{\"has_context\": true, \"context_type\": \"daily\", \"context_name\": \"reading\", \"keywords\": [\"看书\", \"入迷\"], \"should_send_emoji\": true, \"confidence\": 0.9, \"reason\": \"Bot说在看书，日常分享，适合发表情\"}"
+    }
+  },
+  "example_5": {
+    "input": {
+      "role": "user",
+      "content": "{\"user_message\": \"你怎么这样！\", \"bot_reply\": \"哼，不理你了~[angry]\"}"
+    },
+    "output": {
+      "role": "assistant",
+      "content": "{\"has_context\": false, \"has_emotion\": true, \"emotion\": \"angry\", \"is_playful\": true, \"should_send_emotion\": true, \"confidence\": 0.85, \"reason\": \"带有撒娇语气'哼'和'~'，是打情骂俏，可以发angry表情\"}"
+    }
+  },
+  "example_6": {
+    "input": {
+      "role": "user",
+      "content": "{\"user_message\": \"我真的很生气！\", \"bot_reply\": \"对不起，我错了...\"}"
+    },
+    "output": {
+      "role": "assistant",
+      "content": "{\"has_context\": false, \"has_emotion\": true, \"emotion\": \"angry\", \"is_playful\": false, \"should_send_emotion\": false, \"confidence\": 0.9, \"reason\": \"真的生气，严肃氛围，不应该发表情\"}"
+    }
+  },
+  "example_7": {
+    "input": {
+      "role": "user",
+      "content": "{\"user_message\": \"去吃饭了吗？\", \"bot_reply\": \"还没呢，正准备去吃\"}"
+    },
+    "output": {
+      "role": "assistant",
+      "content": "{\"has_context\": true, \"context_type\": \"food\", \"context_name\": \"eating\", \"keywords\": [\"吃饭\", \"去吃\"], \"should_send_emoji\": true, \"confidence\": 0.88, \"reason\": \"讨论吃饭，日常聊天，适合发表情\"}"
+    }
+  },
+  "example_8": {
+    "input": {
+      "role": "user",
+      "content": "{\"user_message\": \"今天天气真好\", \"bot_reply\": \"是啊，阳光明媚的，适合出去玩\"}"
+    },
+    "output": {
+      "role": "assistant",
+      "content": "{\"has_context\": true, \"context_type\": \"weather\", \"context_name\": \"sunny\", \"keywords\": [\"天气好\", \"阳光\", \"明媚\"], \"should_send_emoji\": true, \"confidence\": 0.92, \"reason\": \"晴天，心情愉快，适合发表情\"}"
+    }
+  }
+}

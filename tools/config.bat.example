@@ -1,0 +1,32 @@
+@echo off
+REM ========== API配置 ==========
+set OPENAI_API_KEY=your-api-key-here
+set OPENAI_BASE_URL=https://api.openai.com/v1
+set OPENAI_MODEL=gpt-4-vision-preview
+
+REM ========== 表情包目录 ==========
+set EMOJI_DIR=data/avatars/ATRI/emoji
+
+REM ========================================
+REM 常见配置示例（取消REM注释即可使用）
+REM ========================================
+
+REM === OpenAI GPT-4 ===
+REM set OPENAI_API_KEY=sk-your-openai-key
+REM set OPENAI_BASE_URL=https://api.openai.com/v1
+REM set OPENAI_MODEL=gpt-4-vision-preview
+
+REM === Gemini (Google) ===
+REM set OPENAI_API_KEY=your-gemini-api-key
+REM set OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+REM set OPENAI_MODEL=gemini-1.5-flash
+
+REM === Claude (需要兼容转换) ===
+REM set OPENAI_API_KEY=your-claude-key
+REM set OPENAI_BASE_URL=https://api.anthropic.com/v1
+REM set OPENAI_MODEL=claude-3-opus-20240229
+
+REM === 其他兼容服务 ===
+REM set OPENAI_API_KEY=your-api-key
+REM set OPENAI_BASE_URL=https://your-api-endpoint.com/v1
+REM set OPENAI_MODEL=your-model-name

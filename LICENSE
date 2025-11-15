@@ -1,0 +1,227 @@
+================================================================================
+DeepAnima License, Version 1.2 (Non-Commercial)
+DeepAnima 许可协议，版本 1.2（非商业用途）
+================================================================================
+Copyright (c) 2025 DeepAnima
+--------------------------------------------------------------------------------
+注意：本许可证版本为最终、有效的版本，适用于本软件的所有使用，任何先前的许可条款均以本版本为准。
+NOTE: THIS LICENSE VERSION SHALL GOVERN ALL USES OF THE SOFTWARE, AND ANY PRIOR OR SUBSEQUENT LICENSE PROVISIONS ARE HEREBY SUPERSEDED.
+--------------------------------------------------------------------------------
+1. 定义 Definitions
+--------------------------------------------------------------------------------
+1.1 许可方 Licensor ("We", "Us", "Our")
+    DeepAnima，官方网址：https://deepanima.tech/，注册地址：海口市龙华区深境之灵网络科技工作室
+    （登记编码：92460000MACWECG68N）。本协议及其条款适用于许可方发布的全部软件。
+
+    DeepAnima, whose official website is https://deepanima.tech/ and whose registered address is
+    DeepAnima Network Technology Studio, Longhua District, Haikou City (Registration Code: 92460000MACWECG68N),
+    is the party offering the Software under these Terms and Conditions.
+
+1.2 软件 The Software
+    "软件"指许可方依照本协议发布的任何及所有版本、更新、修改以及基于该软件的衍生作品，包括所有随附的文档或数据材料，无论该软件以何种形式或媒介提供。
+
+    "Software" means any and all versions, updates, modifications, and derivative works of the computer program(s) that are made available by the Licensor under this Agreement, including any accompanying documentation or data materials, regardless of the form or media in which such Software is provided.
+
+1.3 抄袭与归属 Plagiarism and Attribution
+    "抄袭"指在未适当注明来源或违反本许可条款的情况下，全部或实质性部分地使用、合并或复制本软件的行为。抄袭包括但不限于：
+    (a) 将本软件或其衍生作品作为自己的原创作品提交；
+    (b) 在未适当注明出处的情况下，将本软件代码的实质部分合并到另一作品中；
+    (c) 从软件中删除或更改版权声明、作者信息或许可条款。
+
+    "归属"指根据本许可第4.3条的规定，对许可方在软件中的作者身份和权利进行适当确认。
+
+    "Plagiarism" means the act of using, incorporating, or reproducing the Software, in whole or in substantial part,
+    without proper attribution or in violation of the terms of this License. Plagiarism includes, but is not limited to:
+    (a) submitting the Software, or derivative works thereof, as one's own original work;
+    (b) incorporating substantial portions of the Software's code into another work without proper attribution;
+    (c) removing or altering copyright notices, author information, or license terms from the Software.
+
+    "Attribution" means the proper acknowledgment of the Licensor's authorship and rights in the Software,
+    in accordance with Section 4.3 of this License.
+
+1.4 违规行为 Violations
+    在本许可中，"违规行为"包括但不限于：抄袭、未提供适当归属、未经授权的商业使用以及任何其他违反本许可条款的行为。
+
+    For purposes of this License, "violations" include but are not limited to: plagiarism, failure to provide proper attribution, unauthorized commercial use, and any other breach of the terms of this License.
+
+--------------------------------------------------------------------------------
+2. 许可授权 License Grant
+--------------------------------------------------------------------------------
+2.1 在您完全遵守本协议及其条款的前提下，许可方特此授予您非排他性、不可转让且可撤销的许可，
+    仅允许您将本软件用于非商业目的，包括复制、使用和修改本软件。本许可明确排除任何形式的商业使用、分发或基于本软件的商业开发。
+    若您未能遵守本协议的任何条款，您在本许可下的权利将立即终止。
+
+    Subject to your full compliance with these Terms and Conditions, we hereby grant you a non-exclusive,
+    non-transferable, revocable license to use, copy, and modify the Software solely for non-commercial purposes.
+    This License expressly excludes any right to use, distribute, or develop the Software for any commercial purpose.
+    Your rights under this License will terminate immediately if you fail to comply with any term of this Agreement.
+
+2.2 尽管本许可授予了上述权利，许可方 DeepAnima 保留对本软件进行商业使用、分发和开发的专有权利。
+
+    Notwithstanding the license granted herein, the Licensor (DeepAnima) retains the exclusive right
+    to use, distribute, and commercially develop the Software.
+--------------------------------------------------------------------------------
+3. 非商业用途限定 Permitted Purpose
+--------------------------------------------------------------------------------
+3.1 "非商业用途"指绝对不得用于盈利目的的使用。您仅可将本软件用于非商业教育或非商业研究，亦可为此目的复制、使用、修改，
+    及提供整合本软件的专业服务。
+
+    "Permitted Purpose" means any use that is strictly non-commercial. You may use, copy, modify, and, if applicable,
+    provide professional services incorporating the Software solely for non-commercial education or non-commercial research.
+
+3.2 严禁商业用途。明确禁止包括但不限于下列行为：
+    (a) 基于本软件进行任何形式的商业性二次开发；
+    (b) 将本软件或其任何衍生作品用于任何直接或间接产生商业利益的活动；
+    (c) 将本软件用于任何与许可方构成竞争或旨在与许可方竞争的行为。
+
+    Commercial Use Prohibited. You are expressly prohibited from, including without limitation:
+    (a) engaging in any form of commercial secondary development based on the Software;
+    (b) using the Software, or any derivative works thereof, for any activity that directly or indirectly generates commercial benefits;
+    (c) using the Software for any purpose that competes with, or is intended to compete with, the Licensor.
+--------------------------------------------------------------------------------
+4. 再分发与衍生作品 Redistribution and Derivative Works
+--------------------------------------------------------------------------------
+4.1 任何形式的再分发（无论是原始版本还是修改后的版本）均必须严格依照本许可条款进行，并且必须附带或链接提供本许可条款全文。
+
+    Any redistribution, whether in original or modified form, must be done solely under the terms of this License and
+    must include a complete copy of, or a link to, these Terms and Conditions.
+
+4.2 您不得以任何商业目的分发、销售或以其他方式提供本软件的任何副本、修改版本或衍生作品。
+
+    You are not permitted to distribute, sell, or otherwise provide any copies, modifications, or derivative works of the
+    Software for any commercial purpose.
+
+4.3 归属要求 Attribution Requirements
+    对本软件的任何使用、复制、修改或分发（包括衍生作品）均须对许可方进行适当归属。该归属信息应当置于合理可见的位置，
+    使得使用者或接收者能够方便识别。归属必须包括：
+    (a) 许可方提供的软件标题；
+    (b) 许可方的名称（DeepAnima）；
+    (c) 软件原始来源的链接（https://deepanima.tech/）；以及
+    (d) 对本许可的引用。
+
+    Any use, reproduction, modification, or distribution of the Software must include proper attribution to the Licensor.
+    The attribution must include:
+    (a) the title of the Software as provided by the Licensor;
+    (b) the name of the Licensor (DeepAnima);
+    (c) a link to the original source of the Software (https://deepanima.tech/); and
+    (d) a reference to this License.
+
+--------------------------------------------------------------------------------
+5. 专利 Patents
+--------------------------------------------------------------------------------
+5.1 在您按本许可条款进行非商业使用过程中，如若不慎侵犯了许可方持有的任何专利权，则本许可所授予的使用权范围内，包括一项为实现非商业使用所必需的有限专利许可。
+    但若您对任何方提起专利诉讼，主张本软件构成专利侵权，则您根据本许可所享有的权利将立即终止。
+
+    If, in the course of your permitted, non-commercial use of the Software, you inadvertently infringe any patent rights
+    of ours, the license granted herein includes a limited patent license to the extent required for your non-commercial use.
+    However, should you initiate any patent litigation alleging that the Software infringes any patent, your rights under this License
+    will terminate immediately.
+--------------------------------------------------------------------------------
+6. 免责声明 Disclaimer
+--------------------------------------------------------------------------------
+6.1 本软件"按现状"提供，不作任何明示或暗示的保证，包括但不限于对适销性、特定用途适用性或不侵权的保证。
+    无论在任何情况下，许可方均不对因使用或无法使用本软件而导致的任何损失或损害承担责任。
+
+    THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL WE BE LIABLE FOR ANY DAMAGES WHATSOEVER
+    ARISING OUT OF THE USE OF OR INABILITY TO USE THE SOFTWARE.
+--------------------------------------------------------------------------------
+7. 商标 Trademarks
+--------------------------------------------------------------------------------
+7.1 除非本许可中明确允许用于显示许可详情和标识软件来源，您无权使用许可方的任何商标、字号、服务标识或产品名称。
+
+    Except as expressly provided herein for the display of License Details and to identify the origin of the Software,
+    you have no rights to use our trademarks, trade names, service marks, or product names.
+--------------------------------------------------------------------------------
+8. 无未来许可授权 No Grant of Future License
+--------------------------------------------------------------------------------
+8.1 本许可中不包括对任何额外许可（现有或未来）、例如 Apache 许可协议的任何承诺或转让。除非本许可中明确授予之外，
+    所有权利均予以保留。
+
+    There is no promise or transfer of any additional license (now or in the future) such as an Apache License under any
+    circumstances. All rights are reserved except as expressly granted herein.
+--------------------------------------------------------------------------------
+9. 最终解释权 Final Interpretation
+--------------------------------------------------------------------------------
+9.1 深境之灵 DeepAnima 拥有本许可协议的最终解释权。对于本协议任何条款的解释，如发生争议或产生歧义，其解释均为最终且具有约束力。
+
+    DeepAnima shall have the exclusive right to the final interpretation of this License. In the event of any dispute or ambiguity
+    concerning the interpretation of any provision of this License, such interpretation shall be binding upon all parties.
+--------------------------------------------------------------------------------
+10. 防抄袭与知识产权保护 Anti-Plagiarism and Intellectual Property Protection
+--------------------------------------------------------------------------------
+10.1 检测与执行 Detection and Enforcement
+     许可方可通过自动化工具或人工审查的方式检测本许可的违规行为。
+     在检测到违规行为的情况下，许可方可以自行决定：
+     (a) 发出通知，要求在七（7）个工作日内纠正；
+     (b) 公开确认违规行为；
+     (c) 立即终止授予违规者的许可；
+     (d) 根据适用的版权和知识产权法律寻求法律救济。
+
+     The Licensor may use automated tools or manual review to detect violations of this License.
+     In the event of detected violations, the Licensor may, at its sole discretion:
+     (a) issue a notice requesting correction within seven (7) business days;
+     (b) publicly identify the violation;
+     (c) immediately terminate the license granted to the violator;
+     (d) pursue legal remedies available under applicable copyright and intellectual property laws.
+
+10.2 抄袭举报 Reporting Plagiarism
+     如果您发现任何软件抄袭行为，鼓励您通过 legal@deepanima.tech 向许可方报告。报告应包括有关可疑抄袭的详细信息，
+     包括未经授权使用的位置和范围。
+
+     If you become aware of any plagiarism of the Software, you are encouraged to report it to the Licensor at
+     legal@deepanima.tech. Reports should include detailed information about the suspected
+     plagiarism, including the location and extent of the unauthorized use.
+
+10.3 补救措施 Remedial Actions
+     对于无意或轻微的违规行为，许可方可以自行决定允许纠正归属问题而不采取进一步行动，前提是在七（7）个工作日内
+     按照许可方的指示进行纠正。
+
+     In cases of unintentional or minor violations, the Licensor may, at its discretion, allow for correction
+     of attribution issues without further action, provided that the corrections are made within seven (7) business days
+     and in accordance with the Licensor's instructions.
+
+10.4 证据保存 Evidence Preservation
+     许可方可保存违规行为的证据，包括但不限于截图、代码比对和其他数字记录。此类证据可用于执行措施或法律程序。
+
+     The Licensor may preserve evidence of violations, including but not limited to screenshots, code comparisons,
+     and other digital records. Such evidence may be used in enforcement actions or legal proceedings.
+--------------------------------------------------------------------------------
+11. 许可证修改 License Modifications
+--------------------------------------------------------------------------------
+11.1 许可方保留单方面修改本许可的专有权利。任何修改将在修订生效日期（"生效日"）前至少七(7)个日历日在项目官方主页、展示页或维护页（包括但不限于官方代码仓库）上公示。
+     自生效日起，被许可方对本软件的任何使用行为均应受修改后条款的约束并视为对修改后条款的完全接受。若被许可方不同意修改后的条款，被许可方应当立即终止使用本软件并销毁所有软件副本。
+
+     The Licensor reserves the exclusive right to unilaterally modify this License. Any modifications shall be announced on the project's 
+     official homepage, showcase page, or maintenance page (including but not limited to the official code repository) 
+     at least seven (7) calendar days prior to the amendment effective date (the "Effective Date"). 
+     As of the Effective Date, any use of the Software by the Licensee shall be governed by and construed as full acceptance of the modified terms. 
+     If the Licensee does not agree to the modified terms, the Licensee shall immediately cease all use of the Software and destroy all copies thereof.
+--------------------------------------------------------------------------------
+12. 管辖法律 Governing Law
+--------------------------------------------------------------------------------
+12.1 本许可应完全依照中华人民共和国法律管辖、解释并执行，而不考虑任何法律冲突原则。
+
+     This License shall be exclusively governed by, construed, and enforced in accordance with the laws of the People's Republic of China, 
+     without giving effect to any principles of conflicts of law.
+--------------------------------------------------------------------------------
+13. 完整协议 Entire Agreement
+--------------------------------------------------------------------------------
+13.1 本许可构成您与许可方之间关于本软件的完整协议，并取代所有先前或同时期的口头或书面通信和提议。
+
+     This License constitutes the entire agreement between you and the Licensor regarding the Software and
+     supersedes all prior or contemporaneous communications and proposals, whether oral or written.
+--------------------------------------------------------------------------------
+14. 可分割性 Severability
+--------------------------------------------------------------------------------
+14.1 如果本许可的任何条款被认定为不可执行或无效，该条款将在最大可能范围内执行，其他条款将保持完全效力。
+
+     If any provision of this License is held to be unenforceable or invalid, that provision will be enforced
+     to the maximum extent possible, and the other provisions will remain in full force and effect.
+================================================================================
+接受 Acceptance
+================================================================================
+通过以任何方式使用本软件，您即确认已阅读、理解并同意受本"DeepAnima 许可协议，版本 1.2（非商业用途）"条款的约束。
+
+By using this Software in any fashion, you acknowledge that you have read, understood, and agree to be bound
+by the terms and conditions of this DeepAnima License, Version 1.2 (Non-Commercial).
