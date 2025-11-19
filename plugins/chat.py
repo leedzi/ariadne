@@ -12,6 +12,7 @@ import asyncio
 import os
 import time
 import random
+import json
 
 # 导入现有的服务
 try:
@@ -61,6 +62,7 @@ reset_cmd = on_command("reset", priority=5, block=True)
 clear_cmd = on_command("clear", priority=5, block=True)
 context_cmd = on_command("context", priority=5, block=True)
 refresh_memory_cmd = on_command("refresh_memory", priority=5, block=True)
+toggle_recognition_cmd = on_command("toggle_recognition", priority=5, block=True)
 
 # 内容生成命令（block=True阻止消息继续传播）
 # 移除中文别名，防止误触发
@@ -98,6 +100,9 @@ class ChatPlugin:
         # 当前使用的角色名
         self.current_avatar = None
         
+        # 状态文件路径
+        self.state_file = os.path.join(self.root_dir, "data", "recognition_state.json")
+        
         # 消息队列系统
         self.message_queues: Dict[str, Dict] = {}
         self.queue_tasks: Dict[str, asyncio.Task] = {}
@@ -111,6 +116,46 @@ class ChatPlugin:
         self.emoji_cooldowns: Dict[str, float] = {}  # {user_id: last_send_time}
         self.EMOJI_PROBABILITY = 0.3  # 30%概率
         self.EMOJI_COOLDOWN = 300  # 5分钟冷却（300秒）
+        
+        # 功能开关状态 - 从文件加载
+        self._load_recognition_state()
+    
+    def _load_recognition_state(self):
+        """从文件加载识别功能的开关状态"""
+        try:
+            if os.path.exists(self.state_file):
+                with open(self.state_file, 'r', encoding='utf-8') as f:
+                    state = json.load(f)
+                    self.recognition_enabled = state.get('recognition_enabled', True)
+                    self.emoji_recognition_enabled = state.get('emoji_recognition_enabled', True)
+                    logger.info(f"[ChatPlugin] 已加载识别状态: 意图识别={self.recognition_enabled}, 表情识别={self.emoji_recognition_enabled}")
+            else:
+                # 默认状态
+                self.recognition_enabled = True
+                self.emoji_recognition_enabled = True
+                logger.info("[ChatPlugin] 使用默认识别状态（全部开启）")
+        except Exception as e:
+            logger.error(f"[ChatPlugin] 加载识别状态失败: {e}，使用默认状态")
+            self.recognition_enabled = True
+            self.emoji_recognition_enabled = True
+    
+    def _save_recognition_state(self):
+        """保存识别功能的开关状态到文件"""
+        try:
+            # 确保data目录存在
+            os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
+            
+            state = {
+                'recognition_enabled': self.recognition_enabled,
+                'emoji_recognition_enabled': self.emoji_recognition_enabled
+            }
+            
+            with open(self.state_file, 'w', encoding='utf-8') as f:
+                json.dump(state, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"[ChatPlugin] 已保存识别状态到文件")
+        except Exception as e:
+            logger.error(f"[ChatPlugin] 保存识别状态失败: {e}")
     
     async def initialize(self):
         """初始化插件和所有服务"""
@@ -379,6 +424,11 @@ class ChatPlugin:
         """检测并处理提醒意图"""
         if not self.reminder_recognition:
             return
+            
+        # 检查意图识别开关
+        if not self.recognition_enabled:
+            logger.debug("[ChatPlugin] 意图识别已关闭，跳过检测")
+            return
         
         try:
             # 调用意图识别
@@ -441,6 +491,11 @@ class ChatPlugin:
         """检测情境并发送智能表情（20%概率 + 2分钟冷却）- 增强日志版"""
         if not self.context_recognition or not self.emoji_selector:
             logger.info("[SmartEmoji] ❌ 服务未初始化")
+            return
+            
+        # 检查表情包识别开关
+        if not self.emoji_recognition_enabled:
+            logger.debug("[SmartEmoji] 表情包识别已关闭，跳过检测")
             return
         
         try:
@@ -732,6 +787,7 @@ async def handle_help(bot: Bot, event: Event):
 /clear - 清空长期记忆总结
 /context - 清空对话上下文
 /refresh_memory - 强制刷新长期记忆总结
+/toggle_recognition - 开启/关闭意图和表情识别
 
 📚 内容生成：
 /diary - 生成角色日记
@@ -1100,6 +1156,26 @@ async def handle_refresh_memory(bot: Bot, event: Event):
         import traceback
         traceback.print_exc()
         await bot.send(event, f"刷新记忆总结失败: {str(e)}")
+
+
+@toggle_recognition_cmd.handle()
+async def handle_toggle_recognition(bot: Bot, event: Event):
+    """切换意图识别和表情包识别的开关（仅私聊可用）"""
+    # 群聊完全禁用
+    if isinstance(event, GroupMessageEvent):
+        return
+    
+    # 切换状态
+    plugin.recognition_enabled = not plugin.recognition_enabled
+    plugin.emoji_recognition_enabled = not plugin.emoji_recognition_enabled
+    
+    # 保存状态到文件
+    plugin._save_recognition_state()
+    
+    status = "开启" if plugin.recognition_enabled else "关闭"
+    
+    logger.info(f"[ChatPlugin] 用户切换识别功能状态: {status}")
+    await bot.send(event, f"✅ 已{status}意图识别和表情包识别功能\n\n💾 状态已保存，重启后将保持此设置")
 
 
 # 导出插件
