@@ -12,6 +12,8 @@ import re
 import requests
 import json
 from typing import List, Optional, Dict, Any, Tuple
+from bs4 import BeautifulSoup
+from readability import Document
 from src.services.ai.llm_service import LLMService
 from data.config import NETWORK_SEARCH_ENABLED, WEBLENS_ENABLED
 from src.autoupdate.updater import Updater
@@ -156,6 +158,7 @@ class NetworkSearchService:
     def extract_web_content(self, url: str) -> Dict[str, str]:
         """
         提取网页内容，返回原始内容和总结版本
+        优先尝试本地提取，失败则回退到API
 
         :param url: 要提取内容的 URL
         :return: 包含原始内容和总结的字典，如果失败则返回空字典
@@ -165,6 +168,29 @@ class NetworkSearchService:
             'summary': None    # 总结版本，用于系统提示词
         }
 
+        # 尝试本地提取
+        try:
+            logger.info(f"尝试本地提取网页内容: {url}")
+            
+            # 检查是否是视频链接（简单判断）
+            is_video = any(domain in url for domain in ['bilibili.com', 'youtube.com', 'v.qq.com', 'iqiyi.com', 'youku.com'])
+            
+            if is_video:
+                logger.info("检测到视频链接，尝试提取视频信息")
+                local_content = self._extract_video_info(url)
+            else:
+                local_content = self._extract_content_local(url)
+            
+            if local_content:
+                logger.info("本地提取成功")
+                result['original'] = f"以下是链接 {url} 的内容，可作为你的回复参考，但无需直接提及内容来源：\n\n{local_content}"
+                return result
+            else:
+                logger.info("本地提取失败或内容为空，尝试使用API")
+        except Exception as e:
+            logger.warning(f"本地提取异常: {e}，尝试使用API")
+
+        # API 提取逻辑 (作为回退)
         try:
             # 始终使用KouriChat模型
             model = "kourichat-weblens"
@@ -228,6 +254,102 @@ class NetworkSearchService:
         except Exception as e:
             logger.error(f"提取网页内容失败: {str(e)}")
             return result
+
+    def _extract_content_local(self, url: str) -> Optional[str]:
+        """
+        本地提取网页内容
+        
+        :param url: 网页URL
+        :return: 提取的文本内容
+        """
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            # 获取网页内容
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            
+            # 自动检测编码
+            response.encoding = response.apparent_encoding
+            
+            # 使用readability提取主要内容
+            doc = Document(response.text)
+            title = doc.title()
+            summary_html = doc.summary()
+            
+            # 使用BeautifulSoup清理HTML
+            soup = BeautifulSoup(summary_html, 'html.parser')
+            
+            # 移除脚本和样式
+            for script in soup(["script", "style", "iframe", "noscript"]):
+                script.decompose()
+                
+            # 获取文本
+            text = soup.get_text(separator='\n')
+            
+            # 清理空白字符
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            text = '\n'.join(chunk for chunk in chunks if chunk)
+            
+            # 限制长度
+            if len(text) > 5000:
+                text = text[:5000] + "..."
+                
+            return f"# {title}\n\n{text}"
+            
+        except Exception as e:
+            logger.warning(f"本地提取失败: {e}")
+            return None
+
+    def _extract_video_info(self, url: str) -> Optional[str]:
+        """
+        尝试提取视频页面信息（标题、简介等）
+        针对B站等视频网站的优化
+        
+        :param url: 视频URL
+        :return: 提取的视频信息
+        """
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            response.encoding = response.apparent_encoding
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # 提取标题
+            title = soup.title.string if soup.title else "未知标题"
+            
+            # 提取描述 (meta description)
+            description = ""
+            meta_desc = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
+            if meta_desc:
+                description = meta_desc.get('content', '')
+                
+            # 提取关键词 (meta keywords)
+            keywords = ""
+            meta_keywords = soup.find('meta', attrs={'name': 'keywords'})
+            if meta_keywords:
+                keywords = meta_keywords.get('content', '')
+                
+            # 组合信息
+            info = f"# 视频信息\n\n标题: {title}\n"
+            if description:
+                info += f"\n简介: {description}\n"
+            if keywords:
+                info += f"\n关键词: {keywords}\n"
+                
+            return info
+            
+        except Exception as e:
+            logger.warning(f"视频信息提取失败: {e}")
+            return None
 
     def search_internet(self, query: str, conversation_context: str = None) -> Dict[str, str]:
         """

@@ -609,8 +609,13 @@ class MessageHandler:
                         if web_results and web_results['original']:
                             # 将网页内容添加到消息中
                             processed_message = f"{combined_message}\n\n{web_results['original']}"
-                            logger.info("已获取URL内容并添加至本次Prompt中")    
+                            logger.info("已获取URL内容并添加至本次Prompt中")
                             logger.info(processed_message)
+                        else:
+                            # 提取失败时的处理
+                            logger.warning(f"链接内容提取失败: {urls[0]}")
+                            # 可以选择通知用户，或者静默失败
+                            # processed_message = f"{combined_message}\n\n(系统提示：链接 {urls[0]} 内容提取失败，请直接根据链接标题或上下文回答)"
 
                 # 检查合并后的消息是否包含时间提醒和联网搜索需求
                 # 如果已处理搜索需求，则不需要继续处理消息
