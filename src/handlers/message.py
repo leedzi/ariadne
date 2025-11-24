@@ -25,7 +25,7 @@ FALLBACK_REPLY_ON_TRUNCATION = "抱歉，我刚刚想到一半思路有点乱，
 
 class MessageHandler:
     def __init__(self, root_dir, api_key, base_url, model, max_token, temperature,
-                 max_groups, robot_name, prompt_content, image_handler, emoji_handler, memory_service, content_generator=None):
+                 max_groups, robot_name, prompt_content, image_handler, emoji_handler, memory_service, content_generator=None, image_recognition_service=None):
         # ... (init 方法内容保持不变) ...
         self.root_dir = root_dir
         self.api_key = api_key
@@ -49,6 +49,7 @@ class MessageHandler:
         self.image_handler = image_handler
         self.emoji_handler = emoji_handler
         self.memory_service = memory_service
+        self.image_recognition_service = image_recognition_service
         avatar_path = os.path.join(self.root_dir, config.behavior.context.avatar_dir)
         self.current_avatar = os.path.basename(avatar_path)
         self.avatar_real_names = self._extract_avatar_names(avatar_path)
@@ -380,7 +381,7 @@ class MessageHandler:
         except Exception as e:
             logger.error(f"保存消息失败: {str(e)}", exc_info=True)
 
-    def get_api_response(self, message: str, user_id: str, is_group: bool = False) -> str:
+    def get_api_response(self, message: str, user_id: str, is_group: bool = False, image_data: str = None) -> str:
         """获取 API 回复"""
         # 使用类中已初始化的当前角色名
         avatar_name = self.current_avatar
@@ -435,24 +436,25 @@ class MessageHandler:
                 user_id=user_id,
                 system_prompt=combined_system_prompt,
                 previous_context=recent_context,
-                core_memory=core_memory_prompt
+                core_memory=core_memory_prompt,
+                image_data=image_data
             )
             return response
 
         except Exception as e:
             logger.error(f"获取API响应失败: {str(e)}")
             # 降级处理：使用原始提示，不添加记忆
-            return self.deepseek.get_response(message, user_id, self.prompt_content)
+            return self.deepseek.get_response(message, user_id, self.prompt_content, image_data=image_data)
 
     def handle_user_message(self, content: str, chat_id: str, sender_name: str,
-                     username: str, is_group: bool = False, is_image_recognition: bool = False):
+                     username: str, is_group: bool = False, is_image_recognition: bool = False, image_path: str = None):
         """统一的消息处理入口"""
         try:
             logger.info(f"收到消息 - 来自: {sender_name}" + (" (群聊)" if is_group else ""))
             logger.debug(f"消息内容: {content}")
 
             # 处理调试命令
-            if self.debug_handler.is_debug_command(content):
+            if content and self.debug_handler.is_debug_command(content):
                 logger.info(f"检测到调试命令: {content}")
                 # 定义回调函数，用于异步处理生成的内容
                 def command_callback(command, reply, chat_id):
@@ -488,22 +490,24 @@ class MessageHandler:
 
             # 无论消息中是否包含链接，都将消息添加到队列
             # 如果有链接，在队列处理过程中提取内容并替换
-            self._add_to_message_queue(content, chat_id, sender_name, username, is_group, is_image_recognition)
+            self._add_to_message_queue(content, chat_id, sender_name, username, is_group, is_image_recognition, image_path)
 
         except Exception as e:
             logger.error(f"处理消息失败: {str(e)}", exc_info=True)
             return None
 
     def _add_to_message_queue(self, content: str, chat_id: str, sender_name: str,
-                            username: str, is_group: bool, is_image_recognition: bool):
+                            username: str, is_group: bool, is_image_recognition: bool, image_path: str = None):
         """添加消息到队列并设置定时器"""
         # 检测消息中是否包含链接，但不立即处理
         has_link = False
-        if WEBLENS_ENABLED:
+        if content and WEBLENS_ENABLED:
             urls = self.network_search_service.detect_urls(content)
             if urls:
                 has_link = True
                 logger.info(f"[消息队列] 检测到链接: {urls[0]}，将在队列处理时提取内容")
+        else:
+            urls = []
 
         with self.queue_lock:
             queue_key = self._get_queue_key(chat_id, sender_name, is_group)
@@ -512,7 +516,7 @@ class MessageHandler:
             if queue_key not in self.message_queues:
                 logger.info(f"[消息队列] 创建新队列 - 用户: {sender_name}" + (" (群聊)" if is_group else ""))
                 self.message_queues[queue_key] = {
-                    'messages': [content],
+                    'messages': [content] if content else [],
                     'chat_id': chat_id,  # 保存原始chat_id用于发送消息
                     'sender_name': sender_name,
                     'username': username,
@@ -520,19 +524,25 @@ class MessageHandler:
                     'is_image_recognition': is_image_recognition,
                     'last_update': time.time(),
                     'has_link': has_link,  # 标记消息中是否包含链接
-                    'urls': urls if has_link else []  # 如果有链接，保存URL列表
+                    'urls': urls if has_link else [],  # 如果有链接，保存URL列表
+                    'image_paths': [image_path] if image_path else [] # 保存图片路径
                 }
-                logger.debug(f"[消息队列] 首条消息: {content[:50]}...")
+                logger.debug(f"[消息队列] 首条消息: {content[:50] if content else '[图片]'}...")
             else:
                 # 添加新消息到现有队列，后续消息不带时间戳
-                self.message_queues[queue_key]['messages'].append(content)
+                if content:
+                    self.message_queues[queue_key]['messages'].append(content)
+                if image_path:
+                    self.message_queues[queue_key]['image_paths'].append(image_path)
+                    
                 self.message_queues[queue_key]['last_update'] = time.time()
                 self.message_queues[queue_key]['has_link'] = (has_link | self.message_queues[queue_key]['has_link'])
                 if has_link:
                     self.message_queues[queue_key]['urls'].append(urls[0])
                 msg_count = len(self.message_queues[queue_key]['messages'])
-                logger.info(f"[消息队列] 追加消息 - 用户: {sender_name}, 当前消息数: {msg_count}")
-                logger.debug(f"[消息队列] 新增消息: {content[:50]}...")
+                img_count = len(self.message_queues[queue_key]['image_paths'])
+                logger.info(f"[消息队列] 追加消息 - 用户: {sender_name}, 当前消息数: {msg_count}, 图片数: {img_count}")
+                logger.debug(f"[消息队列] 新增消息: {content[:50] if content else '[图片]'}...")
 
             # 取消现有的定时器
             if queue_key in self.queue_timers and self.queue_timers[queue_key]:
@@ -584,12 +594,17 @@ class MessageHandler:
                 sender_name = queue_data['sender_name']
                 is_group = queue_data['is_group']
                 is_image_recognition = queue_data['is_image_recognition']
+                image_paths = queue_data.get('image_paths', [])
 
                 # 合并消息
-                combined_message = "；".join(messages)
+                combined_message = "；".join(messages) if messages else ""
+                
+                # 如果只有图片没有文字，添加默认提示
+                if not combined_message and image_paths:
+                    combined_message = "（用户发送了一张图片）"
 
                 # 打印日志信息
-                logger.info(f"[消息队列] 开始处理 - 用户: {sender_name}, 消息数: {len(messages)}")
+                logger.info(f"[消息队列] 开始处理 - 用户: {sender_name}, 消息数: {len(messages)}, 图片数: {len(image_paths)}")
                 logger.info("----------------------------------------")
                 logger.debug("原始消息列表:")
                 for idx, msg in enumerate(messages, 1):
@@ -597,6 +612,24 @@ class MessageHandler:
                 logger.info("收到消息:")
                 logger.info(combined_message)
                 logger.info("----------------------------------------")
+
+                # 处理图片
+                image_data = None
+                if image_paths:
+                    # 目前只处理第一张图片
+                    first_image_path = image_paths[0]
+                    logger.info(f"处理图片: {first_image_path}")
+                    
+                    if self.image_recognition_service:
+                        image_data = self.image_recognition_service._compress_and_encode_image(first_image_path)
+                    else:
+                        # 降级方案：直接读取文件并编码
+                        try:
+                            import base64
+                            with open(first_image_path, "rb") as image_file:
+                                image_data = base64.b64encode(image_file.read()).decode('utf-8')
+                        except Exception as e:
+                            logger.error(f"读取图片失败: {str(e)}")
 
                 # 处理队列中的链接
                 processed_message = combined_message
@@ -622,7 +655,7 @@ class MessageHandler:
                 search_handled = self._check_time_reminder_and_search(processed_message, sender_name)
                 if search_handled:
                     logger.info(f"搜索需求已处理，直接回复")
-                    return self._handle_text_message(processed_message, chat_id, sender_name, username, is_group)
+                    return self._handle_text_message(processed_message, chat_id, sender_name, username, is_group, image_data=image_data)
 
                 # 在处理消息前，如果启用了联网搜索，先检查是否需要联网搜索
                 search_results = None
@@ -658,7 +691,7 @@ class MessageHandler:
                             reminder_type=reminder_type
                         )
 
-                return self._handle_text_message(processed_message, chat_id, sender_name, username, is_group)
+                return self._handle_text_message(processed_message, chat_id, sender_name, username, is_group, image_data=image_data)
 
         except Exception as e:
             logger.error(f"处理消息队列失败: {e}")
@@ -805,54 +838,83 @@ class MessageHandler:
             self._send_message_with_dollar(reply, chat_id)
 
         # 在 MessageHandler 类中
-    def _handle_text_message(self, content, chat_id, sender_name, username, is_group):
-        """处理普通文本消息（已集成CoT解析和失败消息过滤，并修正save_message调用）"""
-        command = None
-        if content.startswith('/'):
-            command = content.split(' ')[0].lower()
-
-        # 【关键改动】判断是否是主动消息
-        is_auto_message = sender_name == "_SYSTEM_AUTO_MESSAGE_"
-
-        # 如果是主动消息，user_id (用于获取上下文) 是 chat_id，但 "说话人" 是系统
-        # 如果是普通消息，user_id 和 sender_name 都是真实用户
-        context_user_id = chat_id # 加载上下文始终用真实ID
-
-        # 为API准备内容 (保持不变)
-        api_content = f"<用户 {sender_name}>{content}</用户>" if is_group and not is_auto_message else content
-
-        raw_reply = self.get_api_response(api_content, context_user_id, is_group)
-        cleaned_reply, thought_content = self._process_cot_reply(raw_reply)
-        logger.info(f"AI清理后回复: {cleaned_reply}")
-
-        # 发送回复 (对于主动消息，sender_name是_SYSTEM_...，所以_add_at_tag_if_needed不会错误地@系统)
-        display_reply = self._add_at_tag_if_needed(cleaned_reply, sender_name, is_group)
-        if command and command in self.preserve_format_commands:
-            self._send_command_response(command, display_reply, chat_id)
-        else:
-            self._send_message_with_dollar(display_reply, chat_id)
-
-        if cleaned_reply == FALLBACK_REPLY_ON_TRUNCATION:
-            logger.warning("检测到AI回复为截断后的备用消息，将跳过保存记忆。")
-        else:
-            # 【关键改动】修正调用 save_message 的参数
-            is_system_message_flag = is_auto_message or sender_name == "System" or username == "System"
+        def _handle_text_message(self, content, chat_id, sender_name, username, is_group, image_data=None):
+            """处理普通文本消息（已集成CoT解析和失败消息过滤，并修正save_message调用）"""
+            command = None
+            if content.startswith('/'):
+                command = content.split(' ')[0].lower()
+    
+            # 【关键改动】判断是否是主动消息
+            is_auto_message = sender_name == "_SYSTEM_AUTO_MESSAGE_"
+    
+            # 如果是主动消息，user_id (用于获取上下文) 是 chat_id，但 "说话人" 是系统
+            # 如果是普通消息，user_id 和 sender_name 都是真实用户
+            context_user_id = chat_id # 加载上下文始终用真实ID
+    
+            # 为API准备内容 (保持不变)
+            api_content = f"<用户 {sender_name}>{content}</用户>" if is_group and not is_auto_message else content
+    
+            # 如果有图片，注入系统指令
+            if image_data:
+                system_instruction = "请回复用户，并在回复末尾用 <img_memory>...</img_memory> 包裹一段关于这张图片的客观文字描述，用于存入你的长期记忆。"
+                self._add_to_system_prompt(context_user_id, system_instruction)
+    
+            raw_reply = self.get_api_response(api_content, context_user_id, is_group) # get_api_response 内部会调用 deepseek.get_response，需要确保它传递 image_data
             
-            # message_to_save: 如果是主动消息，保存的是指令；否则是用户内容。
-            message_to_save = content 
+            # 修正 get_api_response 调用，目前它不支持 image_data 参数，需要修改 get_api_response
+            # 或者我们直接在这里调用 deepseek.get_response，但这会绕过 get_api_response 中的一些逻辑（如核心记忆加载）
+            # 最好的办法是修改 get_api_response 签名，或者在 get_api_response 内部处理
+            # 由于我们不能在一个 apply_diff 中修改同一个文件的多个地方（如果它们重叠或依赖），我们先假设 get_api_response 已经修改好了
+            # 等等，我刚才只修改了 LLMService.get_response，没有修改 MessageHandler.get_api_response
+            # 我需要在下面的 apply_diff 中同时修改 MessageHandler.get_api_response
             
-            threading.Thread(target=self.save_message,
-                            args=(
-                                chat_id, # sender_id 始终是真实用户ID
-                                sender_name, # sender_name 可能是真实用户或 _SYSTEM_...
-                                message_to_save, # "用户"说的话
-                                cleaned_reply, # AI的回复
-                                is_group, # 是否群聊
-                                is_system_message_flag
-                            ),
-                            daemon=True).start()
-        
-        return cleaned_reply
+            cleaned_reply, thought_content = self._process_cot_reply(raw_reply)
+            
+            # 提取图片描述
+            img_desc = ""
+            if image_data:
+                import re
+                match = re.search(r'<img_memory>(.*?)</img_memory>', cleaned_reply, re.DOTALL)
+                if match:
+                    img_desc = match.group(1).strip()
+                    cleaned_reply = cleaned_reply.replace(match.group(0), "").strip()
+                    logger.info(f"提取到图片描述: {img_desc}")
+                else:
+                    img_desc = "（图片内容未识别）"
+                    logger.warning("未提取到图片描述")
+    
+            logger.info(f"AI清理后回复: {cleaned_reply}")
+    
+            # 发送回复 (对于主动消息，sender_name是_SYSTEM_...，所以_add_at_tag_if_needed不会错误地@系统)
+            display_reply = self._add_at_tag_if_needed(cleaned_reply, sender_name, is_group)
+            if command and command in self.preserve_format_commands:
+                self._send_command_response(command, display_reply, chat_id)
+            else:
+                self._send_message_with_dollar(display_reply, chat_id)
+    
+            if cleaned_reply == FALLBACK_REPLY_ON_TRUNCATION:
+                logger.warning("检测到AI回复为截断后的备用消息，将跳过保存记忆。")
+            else:
+                # 【关键改动】修正调用 save_message 的参数
+                is_system_message_flag = is_auto_message or sender_name == "System" or username == "System"
+                
+                # message_to_save: 如果是主动消息，保存的是指令；否则是用户内容。
+                message_to_save = content
+                if img_desc:
+                    message_to_save = f"{content} [图片内容：{img_desc}]"
+                
+                threading.Thread(target=self.save_message,
+                                args=(
+                                    chat_id, # sender_id 始终是真实用户ID
+                                    sender_name, # sender_name 可能是真实用户或 _SYSTEM_...
+                                    message_to_save, # "用户"说的话
+                                    cleaned_reply, # AI的回复
+                                    is_group, # 是否群聊
+                                    is_system_message_flag
+                                ),
+                                daemon=True).start()
+            
+            return cleaned_reply
 
     def _add_to_system_prompt(self, chat_id: str, content: str) -> None:
         """

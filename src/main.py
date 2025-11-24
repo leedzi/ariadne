@@ -125,20 +125,27 @@ class PrivateChatBot:
                 is_emoji = True
                 content = None
 
-            if img_path:
-                recognized_text = self.image_recognition_service.recognize_image(img_path, is_emoji)
+            # 如果是图片，不再单独调用识别服务，而是直接传给 MessageHandler
+            # 但如果是表情包（is_emoji=True），可能还是需要识别？
+            # 暂时统一处理：如果是表情包，还是走原来的识别逻辑（因为表情包通常没有上下文，需要转成文字）
+            # 如果是普通图片，走新的多模态流程
+            
+            if is_emoji and img_path:
+                recognized_text = self.image_recognition_service.recognize_image(img_path, is_emoji=True)
                 content = recognized_text if content is None else f"{content} {recognized_text}"
                 is_image_recognition = True
+                img_path = None # 表情包识别后，不再作为图片传递给LLM
 
             # 处理消息
-            if content:
+            if content or img_path:
                 self.message_handler.handle_user_message(
                     content=content,
                     chat_id=chat_name,
                     sender_name=username,
                     username=username,
                     is_group=False,
-                    is_image_recognition=is_image_recognition
+                    is_image_recognition=is_image_recognition,
+                    image_path=img_path
                 )
 
         except Exception as e:
@@ -190,7 +197,8 @@ class GroupChatBot:
                 image_handler=image_handler,
                 emoji_handler=self.emoji_handler,
                 memory_service=memory_service,
-                content_generator=content_generator
+                content_generator=content_generator,
+                image_recognition_service=self.image_recognition_service
             )
             
             # 手动设置群聊专用属性（避免初始化时使用全局配置）
@@ -233,20 +241,27 @@ class GroupChatBot:
                 is_emoji = True
                 content = None
 
-            if img_path:
-                recognized_text = self.image_recognition_service.recognize_image(img_path, is_emoji)
+            # 如果是图片，不再单独调用识别服务，而是直接传给 MessageHandler
+            # 但如果是表情包（is_emoji=True），可能还是需要识别？
+            # 暂时统一处理：如果是表情包，还是走原来的识别逻辑（因为表情包通常没有上下文，需要转成文字）
+            # 如果是普通图片，走新的多模态流程
+            
+            if is_emoji and img_path:
+                recognized_text = self.image_recognition_service.recognize_image(img_path, is_emoji=True)
                 content = recognized_text if content is None else f"{content} {recognized_text}"
                 is_image_recognition = True
+                img_path = None # 表情包识别后，不再作为图片传递给LLM
 
             # 处理消息
-            if content:
+            if content or img_path:
                 handler.handle_user_message(
                     content=content,
                     chat_id=group_name,
                     sender_name=username,
                     username=username,
                     is_group=True,
-                    is_image_recognition=is_image_recognition
+                    is_image_recognition=is_image_recognition,
+                    image_path=img_path
                 )
 
         except Exception as e:
@@ -385,7 +400,7 @@ def initialize_services():
         root_dir=root_dir, api_key=config.llm.api_key, base_url=config.llm.base_url, model=config.llm.model,
         max_token=config.llm.max_tokens, temperature=config.llm.temperature, max_groups=config.behavior.context.max_groups,
         robot_name=ROBOT_WX_NAME, prompt_content=prompt_content, image_handler=image_handler, emoji_handler=emoji_handler,
-        memory_service=memory_service, content_generator=content_generator
+        memory_service=memory_service, content_generator=content_generator, image_recognition_service=image_recognition_service
     )
     logger.info("已创建唯一的、共享的 MessageHandler 实例。")
 

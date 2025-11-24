@@ -131,9 +131,9 @@ class LLMService:
             logger.error(f"验证响应时发生错误: {str(e)}")
             return False
 
-    def get_response(self, message: str, user_id: str, system_prompt: str, previous_context: List[Dict] = None, core_memory: str = None) -> str:
+    def get_response(self, message: str, user_id: str, system_prompt: str, previous_context: List[Dict] = None, core_memory: str = None, image_data: str = None) -> str:
         is_summarization_task = user_id.startswith("summarize_")
-        if not message.strip(): return "Error: Empty message received"
+        if not message.strip() and not image_data: return "Error: Empty message received"
         
         final_system_prompt_content = ""
         messages_for_api = []
@@ -170,7 +170,17 @@ class LLMService:
             
             # 将"当前时间"作为前缀拼进本次用户消息内容（主动消息也走这里）
             msg_with_time = f"【系统消息：现在时间是 {current_time_str}】\n{message}"
-            user_message_obj = {"role": "user", "content": msg_with_time}
+            
+            if image_data:
+                # 多模态消息结构
+                user_message_content = [
+                    {"type": "text", "text": msg_with_time},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
+                ]
+                user_message_obj = {"role": "user", "content": user_message_content, "timestamp": datetime.datetime.now().isoformat()}
+            else:
+                user_message_obj = {"role": "user", "content": msg_with_time}
+                
             self._manage_context(user_id, user_message_obj)
             
             # 后续保持不变
