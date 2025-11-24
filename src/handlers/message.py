@@ -620,10 +620,44 @@ class MessageHandler:
                     first_image_path = image_paths[0]
                     logger.info(f"处理图片: {first_image_path}")
                     
-                    if self.image_recognition_service:
+                    # 检查聊天API和识图API是否一致
+                    is_same_provider = False
+                    if self.image_recognition_service and self.deepseek:
+                        try:
+                            chat_base_url = str(self.deepseek.client.base_url).rstrip('/')
+                            vision_base_url = str(self.image_recognition_service.base_url).rstrip('/')
+                            chat_api_key = self.deepseek.client.api_key
+                            vision_api_key = self.image_recognition_service.api_key
+                            
+                            # 移除可能的 /v1 后缀进行比较（有些配置可能不一致）
+                            if chat_base_url.endswith('/v1'): chat_base_url = chat_base_url[:-3]
+                            if vision_base_url.endswith('/v1'): vision_base_url = vision_base_url[:-3]
+                            
+                            if chat_base_url == vision_base_url and chat_api_key == vision_api_key:
+                                is_same_provider = True
+                                logger.info("检测到聊天和识图API一致，将使用多模态合并请求")
+                            else:
+                                logger.info(f"聊天和识图API不一致，将使用独立识图流程 (Chat: {chat_base_url}, Vision: {vision_base_url})")
+                        except Exception as e:
+                            logger.warning(f"比较API配置时出错: {e}")
+
+                    if is_same_provider and self.image_recognition_service:
+                        # API一致，使用多模态流程：压缩并编码图片
                         image_data = self.image_recognition_service._compress_and_encode_image(first_image_path)
+                    elif self.image_recognition_service:
+                        # API不一致，使用独立识图流程：先识别转文字
+                        logger.info("正在调用独立识图服务...")
+                        # 注意：这里我们假设 recognize_image 方法能处理本地路径
+                        # 如果是表情包，已经在 main.py 处理过了，这里处理的是普通图片
+                        recognized_text = self.image_recognition_service.recognize_image(first_image_path, is_emoji=False)
+                        if recognized_text:
+                            if combined_message:
+                                combined_message += f"\n[图片内容：{recognized_text}]"
+                            else:
+                                combined_message = f"[图片内容：{recognized_text}]"
+                            logger.info(f"图片识别完成，已追加到消息: {recognized_text[:50]}...")
                     else:
-                        # 降级方案：直接读取文件并编码
+                        # 降级方案：直接读取文件并编码（仅当没有识图服务实例时，虽然不太可能发生）
                         try:
                             import base64
                             with open(first_image_path, "rb") as image_file:
