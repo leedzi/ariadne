@@ -103,10 +103,9 @@ class LLMService:
             think_pattern_square = re.compile(r'\[think\].*?\[/think\]\s*', re.DOTALL | re.IGNORECASE)
             content = think_pattern_square.sub('', content).strip()
             
-            # 再处理XML风格的 
-
-            if '<thinking>' in content and '</thinking>' in content:
-                content = content.split('</think>')[-1].strip()
+            # 处理XML风格的 <think> 和 <thinking>
+            think_pattern_xml = re.compile(r'<(think|thinking)>.*?</\1>\s*', re.DOTALL | re.IGNORECASE)
+            content = think_pattern_xml.sub('', content).strip()
             
             # 最后处理三换行符
             triple_newline_match = re.search(r'\n\n\n', content)
