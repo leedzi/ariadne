@@ -36,6 +36,11 @@
         "auto_model_switch": {
           "value": false,
           "type": "boolean"
+        },
+        "custom_cot_enabled": {
+          "value": false,
+          "type": "boolean",
+          "description": "是否启用自定义思维链（从 data/prompts/custom_cot.md 加载）"
         }
       }
     },
