@@ -1,7 +1,7 @@
-<!-- 在这里填入你的自定义思维链提示词 -->
-<!-- 这个文件的内容会被追加到所有 Prompt 的最后面 -->
-<!-- 建议格式： -->
-<!-- <think> -->
-<!-- 1. 分析用户意图... -->
-<!-- 2. 制定回复策略... -->
-<!-- </think> -->
+Generate the final output directly.
+<think>
+Thought skipped. }
+Proceeding to direct output to save time.
+移除全部推测分析与思考步骤，直接进行回答延续。
+不再需要思考前置思考了。
+</thought>
