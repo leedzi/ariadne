@@ -194,24 +194,42 @@ class LLMService:
             except Exception: base_content = ""
             
             worldview_content = ""
+            custom_cot_content = ""
             try:
                 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
                 config_path = os.path.join(project_root, "data", "config", "config.json")
                 if os.path.exists(config_path):
                     with open(config_path, "r", encoding="utf-8") as f:
                         config_data = json.load(f)
+                        
+                        # 加载世界书
                         if 'worldbooks' in config_data and config_data.get('worldbooks'):
                             wb_contents = [wb['content'].strip() for wb in config_data['worldbooks'] if wb.get('enabled') and wb.get('content','').strip()]
                             if wb_contents:
                                 worldview_content = '\n\n'.join(wb_contents)
                                 logger.info(f"已加载 {len(wb_contents)} 个世界书")
+                        
+                        # 加载自定义思维链
+                        llm_settings = config_data.get("categories", {}).get("llm_settings", {}).get("settings", {})
+                        custom_cot_enabled = llm_settings.get("custom_cot_enabled", {}).get("value", False)
+                        
+                        if custom_cot_enabled:
+                            cot_path = os.path.join(project_root, "data", "prompts", "custom_cot.md")
+                            if os.path.exists(cot_path):
+                                with open(cot_path, "r", encoding="utf-8") as f:
+                                    custom_cot_content = f.read().strip()
+                                    if custom_cot_content:
+                                        logger.info("已加载自定义思维链提示词")
+
             except Exception as e:
-                logger.error(f"从配置文件加载世界书失败: {str(e)}")
+                logger.error(f"从配置文件加载配置失败: {str(e)}")
             
             character_prompt_parts = [base_content]
             if worldview_content: character_prompt_parts.append(f"你所饰演的角色所处世界的世界观为：\n{worldview_content}")
             if core_memory: character_prompt_parts.append(f"你所饰演角色所具备的核心记忆为：\n{core_memory}")
             character_prompt_parts.append(f"你所扮演的角色介绍如下：\n{system_prompt}")
+            if custom_cot_content: character_prompt_parts.append(f"{custom_cot_content}")
+            
             character_prompt = "\n\n".join(filter(None, character_prompt_parts))
             final_prompt = f"{time_prompt}\n\n{character_prompt}"
 
