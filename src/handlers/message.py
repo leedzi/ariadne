@@ -38,7 +38,8 @@ class MessageHandler:
         self.deepseek = LLMService(
             api_key=api_key, base_url=base_url, model=model, max_token=max_token,
             temperature=temperature, max_groups=max_groups,
-            auto_model_switch=getattr(config.llm, 'auto_model_switch', False)
+            auto_model_switch=getattr(config.llm, 'auto_model_switch', False),
+            stream=getattr(config.llm, 'stream', False)
         )
         self.message_queues = {}
         self.queue_timers = {}

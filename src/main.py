@@ -383,7 +383,8 @@ def initialize_services():
         api_key=config.media.image_recognition.api_key,
         base_url=config.media.image_recognition.base_url,
         temperature=config.media.image_recognition.temperature,
-        model=config.media.image_recognition.model
+        model=config.media.image_recognition.model,
+        stream=getattr(config.media.image_recognition, 'stream', False)
     )
 
     # 获取机器人名称

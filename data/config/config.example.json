@@ -41,6 +41,11 @@
           "value": false,
           "type": "boolean",
           "description": "是否启用自定义思维链（从 data/prompts/custom_cot.md 加载）"
+        },
+        "stream": {
+          "value": false,
+          "type": "boolean",
+          "description": "是否启用流式传输（如果 API 仅支持流式，请开启此项）"
         }
       }
     },
@@ -87,6 +92,11 @@
             "description": "图像识别温度参数",
             "min": 0,
             "max": 1
+          },
+          "stream": {
+            "value": false,
+            "type": "boolean",
+            "description": "是否启用流式传输"
           }
         },
         "image_generation": {

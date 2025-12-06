@@ -22,7 +22,7 @@ logger = logging.getLogger('main')
 
 class LLMService:
     def __init__(self, api_key: str, base_url: str, model: str,
-                 max_token: int, temperature: float, max_groups: int, auto_model_switch: bool = False):
+                 max_token: int, temperature: float, max_groups: int, auto_model_switch: bool = False, stream: bool = False):
         updater = Updater()
         version = updater.get_current_version()
         version_identifier = updater.get_version_identifier()
@@ -37,7 +37,7 @@ class LLMService:
         )
         self.config = {
             "model": model, "max_token": max_token, "temperature": temperature,
-            "max_groups": max_groups, "auto_model_switch": auto_model_switch,
+            "max_groups": max_groups, "auto_model_switch": auto_model_switch, "stream": stream
         }
         self.chat_contexts: Dict[str, List[Dict]] = {}
         self.original_model = model
@@ -255,12 +255,23 @@ class LLMService:
                         "messages": messages_for_api,
                         "temperature": self.config["temperature"],
                         "max_tokens": self.config["max_token"],
-                        "frequency_penalty": 0.2
+                        "frequency_penalty": 0.2,
+                        "stream": self.config.get("stream", False)
                     }
-                    response = self.client.chat.completions.create(**request_config)
-                    if not self._validate_response(response.model_dump()):
-                        raise ValueError(f"错误的API响应结构")
-                    raw_content = response.choices[0].message.content or ""
+                    
+                    raw_content = ""
+                    if self.config.get("stream", False):
+                        stream_response = self.client.chat.completions.create(**request_config)
+                        for chunk in stream_response:
+                            if chunk.choices:
+                                delta = chunk.choices[0].delta
+                                if delta.content:
+                                    raw_content += delta.content
+                    else:
+                        response = self.client.chat.completions.create(**request_config)
+                        if not self._validate_response(response.model_dump()):
+                            raise ValueError(f"错误的API响应结构")
+                        raw_content = response.choices[0].message.content or ""
                 
                 # 清理响应：移除思维链标签
                 cleaned_content = self._sanitize_response(raw_content)
@@ -323,19 +334,35 @@ class LLMService:
             model = kwargs.get('model', self.config["model"])
             logger.info(f"使用模型: {model} 发送聊天请求")
 
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=kwargs.get('temperature', self.config["temperature"]),
-                max_tokens=self.config["max_token"]
-            )
+            stream = kwargs.get('stream', self.config.get("stream", False))
+            if stream:
+                response = self.client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=kwargs.get('temperature', self.config["temperature"]),
+                    max_tokens=self.config["max_token"],
+                    stream=True
+                )
+                raw_content = ""
+                for chunk in response:
+                    if chunk.choices:
+                        delta = chunk.choices[0].delta
+                        if delta.content:
+                            raw_content += delta.content
+            else:
+                response = self.client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=kwargs.get('temperature', self.config["temperature"]),
+                    max_tokens=self.config["max_token"]
+                )
 
-            if not self._validate_response(response.model_dump()):
-                error_msg = f"错误的API响应结构: {json.dumps(response.model_dump(), default=str)}"
-                logger.error(error_msg)
-                return f"Error: {error_msg}"
+                if not self._validate_response(response.model_dump()):
+                    error_msg = f"错误的API响应结构: {json.dumps(response.model_dump(), default=str)}"
+                    logger.error(error_msg)
+                    return f"Error: {error_msg}"
 
-            raw_content = response.choices[0].message.content
+                raw_content = response.choices[0].message.content
             # 清理和过滤响应内容
             clean_content = self._sanitize_response(raw_content)
             filtered_content = self._filter_thinking_content(clean_content)

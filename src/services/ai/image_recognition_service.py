@@ -16,11 +16,12 @@ import io
 logger = logging.getLogger('main')
 
 class ImageRecognitionService:
-    def __init__(self, api_key: str, base_url: str, temperature: float, model: str):
+    def __init__(self, api_key: str, base_url: str, temperature: float, model: str, stream: bool = False):
         self.api_key = api_key
         self.base_url = base_url
         self.temperature = min(max(0.0, temperature), 1.0)
         self.model = model
+        self.stream = stream
 
         from src.autoupdate.updater import Updater
         updater = Updater()
@@ -92,19 +93,35 @@ class ImageRecognitionService:
             logger.info(f"准备通过 OpenAI 客户端发送图像识别请求 (模型: {self.model})")
             
             try:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages_for_api,
-                    temperature=self.temperature,
-                    max_tokens=2000,
-                    top_p=0.7,         # <-- 新增：一个常见的参数
-                    stream=False       # <-- 新增：明确告知不使用流式传输
-                )
-                
-                if not response.choices or not response.choices[0].message:
-                    raise ValueError(f"API响应格式异常: {response.model_dump_json(indent=2)}")
+                if self.stream:
+                    stream_response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=messages_for_api,
+                        temperature=self.temperature,
+                        max_tokens=2000,
+                        top_p=0.7,
+                        stream=True
+                    )
+                    recognized_text = ""
+                    for chunk in stream_response:
+                        if chunk.choices:
+                            delta = chunk.choices[0].delta
+                            if delta.content:
+                                recognized_text += delta.content
+                else:
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=messages_for_api,
+                        temperature=self.temperature,
+                        max_tokens=2000,
+                        top_p=0.7,
+                        stream=False
+                    )
+                    
+                    if not response.choices or not response.choices[0].message:
+                        raise ValueError(f"API响应格式异常: {response.model_dump_json(indent=2)}")
 
-                recognized_text = response.choices[0].message.content or ""
+                    recognized_text = response.choices[0].message.content or ""
                 
                 if not recognized_text.strip():
                     logger.warning(f"API调用成功，但返回了空内容 (模型: {self.model})。可能是API服务商的特定问题。")
