@@ -90,7 +90,7 @@ class ImageRecognitionService:
                 ]}
             ]
             
-            logger.info(f"准备通过 OpenAI 客户端发送图像识别请求 (模型: {self.model})")
+            logger.info(f"准备通过 OpenAI 客户端发送图像识别请求 (模型: {self.model}, Stream: {self.stream})")
             
             try:
                 if self.stream:
@@ -120,9 +120,37 @@ class ImageRecognitionService:
                     
                     if not hasattr(response, 'choices') or not response.choices or not response.choices[0].message:
                         error_detail = response.model_dump_json(indent=2) if hasattr(response, 'model_dump_json') else str(response)
-                        raise ValueError(f"API响应格式异常: {error_detail}")
+                        
+                        # 尝试解析SSE格式的字符串 (data: {...}data: {...})
+                        if isinstance(response, str) and "data: {" in response:
+                            try:
+                                logger.info("检测到SSE格式字符串，尝试解析...")
+                                parsed_content = ""
+                                chunks = response.split('data: ')
+                                for chunk in chunks:
+                                    chunk = chunk.strip()
+                                    if not chunk or chunk == '[DONE]': continue
+                                    try:
+                                        data = json.loads(chunk)
+                                        if 'choices' in data and len(data['choices']) > 0:
+                                            delta = data['choices'][0].get('delta', {})
+                                            part = delta.get('content', '')
+                                            if part:
+                                                parsed_content += part
+                                    except json.JSONDecodeError:
+                                        continue
+                                
+                                if parsed_content:
+                                    logger.info(f"SSE解析成功，提取内容长度: {len(parsed_content)}")
+                                    recognized_text = parsed_content
+                            except Exception as e:
+                                logger.error(f"SSE解析失败: {e}")
+                                raise ValueError(f"API响应格式异常: {error_detail}")
+                        else:
+                             raise ValueError(f"API响应格式异常: {error_detail}")
 
-                    recognized_text = response.choices[0].message.content or ""
+                    else:
+                         recognized_text = response.choices[0].message.content or ""
                 
                 if not recognized_text.strip():
                     logger.warning(f"API调用成功，但返回了空内容 (模型: {self.model})。可能是API服务商的特定问题。")

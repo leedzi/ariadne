@@ -259,8 +259,12 @@ class LLMService:
                         "stream": self.config.get("stream", False)
                     }
                     
+                    # 调试日志
+                    logger.info(f"LLM请求配置 - Stream: {self.config.get('stream', False)}, Model: {current_model}")
+
                     raw_content = ""
                     if self.config.get("stream", False):
+                        logger.info(f"使用流式请求 (Stream=True)")
                         stream_response = self.client.chat.completions.create(**request_config)
                         for chunk in stream_response:
                             if chunk.choices:
@@ -281,9 +285,42 @@ class LLMService:
                             try:
                                 response_dict = json.loads(str(response))
                             except:
-                                logger.warning(f"API响应类型未知: {type(response)}")
+                                logger.warning(f"API响应类型未知: {type(response)}, 内容: {str(response)[:200]}") # 打印前200字符
                         
                         if not response_dict or not self._validate_response(response_dict):
+                            # 如果是字符串且不是JSON，可能就是内容本身？虽然OpenAI不应该这样返回。
+                            if isinstance(response, str) and len(response) > 0:
+                                logger.warning("响应是纯字符串，尝试直接作为内容使用")
+                                
+                                # 尝试解析SSE格式的字符串 (data: {...}data: {...})
+                                if "data: {" in response:
+                                    try:
+                                        logger.info("检测到SSE格式字符串，尝试解析...")
+                                        parsed_content = ""
+                                        chunks = response.split('data: ')
+                                        for chunk in chunks:
+                                            chunk = chunk.strip()
+                                            if not chunk or chunk == '[DONE]': continue
+                                            try:
+                                                data = json.loads(chunk)
+                                                if 'choices' in data and len(data['choices']) > 0:
+                                                    delta = data['choices'][0].get('delta', {})
+                                                    part = delta.get('content', '')
+                                                    if part:
+                                                        parsed_content += part
+                                            except json.JSONDecodeError:
+                                                continue
+                                        
+                                        if parsed_content:
+                                            logger.info(f"SSE解析成功，提取内容长度: {len(parsed_content)}")
+                                            raw_content = parsed_content
+                                            return self._filter_thinking_content(self._sanitize_response(raw_content))
+                                    except Exception as e:
+                                        logger.error(f"SSE解析失败: {e}")
+
+                                raw_content = response
+                                return self._filter_thinking_content(self._sanitize_response(raw_content))
+
                             raise ValueError(f"错误的API响应结构: {type(response)}")
                             
                         # 获取内容
