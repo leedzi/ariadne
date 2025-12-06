@@ -118,8 +118,9 @@ class ImageRecognitionService:
                         stream=False
                     )
                     
-                    if not response.choices or not response.choices[0].message:
-                        raise ValueError(f"API响应格式异常: {response.model_dump_json(indent=2)}")
+                    if not hasattr(response, 'choices') or not response.choices or not response.choices[0].message:
+                        error_detail = response.model_dump_json(indent=2) if hasattr(response, 'model_dump_json') else str(response)
+                        raise ValueError(f"API响应格式异常: {error_detail}")
 
                     recognized_text = response.choices[0].message.content or ""
                 

@@ -269,9 +269,30 @@ class LLMService:
                                     raw_content += delta.content
                     else:
                         response = self.client.chat.completions.create(**request_config)
-                        if not self._validate_response(response.model_dump()):
-                            raise ValueError(f"错误的API响应结构")
-                        raw_content = response.choices[0].message.content or ""
+                        
+                        # 兼容性处理：获取响应字典
+                        response_dict = None
+                        if isinstance(response, dict):
+                            response_dict = response
+                        elif hasattr(response, 'model_dump'):
+                            response_dict = response.model_dump()
+                        else:
+                            # 尝试作为字符串解析
+                            try:
+                                response_dict = json.loads(str(response))
+                            except:
+                                logger.warning(f"API响应类型未知: {type(response)}")
+                        
+                        if not response_dict or not self._validate_response(response_dict):
+                            raise ValueError(f"错误的API响应结构: {type(response)}")
+                            
+                        # 获取内容
+                        if hasattr(response, 'choices'):
+                            raw_content = response.choices[0].message.content or ""
+                        elif isinstance(response, dict):
+                            raw_content = response.get('choices', [])[0].get('message', {}).get('content', "") or ""
+                        else:
+                            raw_content = ""
                 
                 # 清理响应：移除思维链标签
                 cleaned_content = self._sanitize_response(raw_content)
@@ -357,12 +378,22 @@ class LLMService:
                     max_tokens=self.config["max_token"]
                 )
 
-                if not self._validate_response(response.model_dump()):
-                    error_msg = f"错误的API响应结构: {json.dumps(response.model_dump(), default=str)}"
+                # 兼容性处理
+                response_dict = None
+                if isinstance(response, dict):
+                    response_dict = response
+                elif hasattr(response, 'model_dump'):
+                    response_dict = response.model_dump()
+                
+                if not response_dict or not self._validate_response(response_dict):
+                    error_msg = f"错误的API响应结构: {type(response)}"
                     logger.error(error_msg)
                     return f"Error: {error_msg}"
 
-                raw_content = response.choices[0].message.content
+                if hasattr(response, 'choices'):
+                    raw_content = response.choices[0].message.content
+                else:
+                    raw_content = response_dict.get('choices', [])[0].get('message', {}).get('content', "")
             # 清理和过滤响应内容
             clean_content = self._sanitize_response(raw_content)
             filtered_content = self._filter_thinking_content(clean_content)
