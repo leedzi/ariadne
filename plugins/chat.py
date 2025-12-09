@@ -357,6 +357,10 @@ class ChatPlugin:
                             img.save(buffer, format="JPEG", quality=80)
                             image_data = base64.b64encode(buffer.getvalue()).decode('utf-8')
                     logger.info(f"[ChatPlugin] 已加载并编码图片: {img_path}")
+                    
+                    # 【关键】如果是多模态模式，注入系统指令要求AI描述图片
+                    system_prompt += "\n\n【系统指令】用户发送了一张图片。请在回复用户的同时，在回复内容的末尾（最后面），用 <img_memory>...</img_memory> 标签包裹一段关于这张图片的客观文字描述（包括画面主体、环境、文字信息等），这段描述将用于存入你的长期记忆，以便你以后能记得这张图片的内容。请确保描述详细且准确。回复用户的内容和图片描述之间请换行。"
+                    
                 except Exception as e:
                     logger.error(f"[ChatPlugin] 图片处理失败: {e}")
 
@@ -370,11 +374,29 @@ class ChatPlugin:
                 image_data=image_data
             )
             
+            # 提取图片描述并清理回复
+            img_desc = ""
+            if image_data and response:
+                import re
+                match = re.search(r'<img_memory>(.*?)</img_memory>', response, re.DOTALL)
+                if match:
+                    img_desc = match.group(1).strip()
+                    # 从回复中移除描述标签，只保留给用户的回复
+                    response = response.replace(match.group(0), "").strip()
+                    logger.info(f"[ChatPlugin] 提取到图片描述: {img_desc[:50]}...")
+                else:
+                    logger.warning("[ChatPlugin] 未提取到图片描述")
+            
             # 保存到记忆系统
             if self.memory_service and response:
+                # 如果有图片描述，将其追加到用户消息中保存
+                user_message_to_save = content
+                if img_desc:
+                    user_message_to_save = f"{content}\n[图片内容：{img_desc}]"
+                
                 self.memory_service.add_conversation(
                     avatar_name=avatar_name,
-                    user_message=content,
+                    user_message=user_message_to_save,
                     bot_reply=response,
                     user_id=user_id
                 )
