@@ -598,7 +598,19 @@ class MessageHandler:
                 image_paths = queue_data.get('image_paths', [])
 
                 # 合并消息
-                combined_message = "；".join(messages) if messages else ""
+                # 【修复】如果存在图片，且消息内容仅为URL，则认为是图片链接，不将其作为文本合并
+                filtered_messages = []
+                if image_paths:
+                    for msg in messages:
+                        # 简单的URL检测：以http开头且不含空格
+                        if msg.strip().startswith(('http://', 'https://')) and ' ' not in msg.strip():
+                            logger.info(f"检测到图片URL消息，已过滤: {msg[:30]}...")
+                            continue
+                        filtered_messages.append(msg)
+                else:
+                    filtered_messages = messages
+
+                combined_message = "；".join(filtered_messages) if filtered_messages else ""
                 
                 # 如果只有图片没有文字，添加默认提示
                 if not combined_message and image_paths:
