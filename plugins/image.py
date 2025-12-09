@@ -53,6 +53,22 @@ class ImagePlugin:
                     base_url = img_config.get('base_url', {}).get('value', '')
                     model = img_config.get('model', {}).get('value', 'gemini-2.5-pro')
                     temperature = img_config.get('temperature', {}).get('value', 0.7)
+
+                    # 获取聊天LLM配置以进行比较
+                    llm_config = config.get('categories', {}).get('llm_settings', {}).get('settings', {})
+                    chat_api_key = llm_config.get('api_key', {}).get('value', '')
+                    chat_base_url = llm_config.get('base_url', {}).get('value', '')
+                    
+                    # 检查是否为同一提供商
+                    self.is_same_provider = False
+                    if api_key and base_url and chat_api_key and chat_base_url:
+                        # 移除可能的 /v1 后缀进行比较
+                        clean_base_url = base_url.rstrip('/').replace('/v1', '')
+                        clean_chat_url = chat_base_url.rstrip('/').replace('/v1', '')
+                        
+                        if clean_base_url == clean_chat_url and api_key == chat_api_key:
+                            self.is_same_provider = True
+                            logger.info("[ImagePlugin] 检测到聊天和识图API一致，将启用多模态直接处理")
                     
                     if api_key and base_url:
                         self.recognition_service = ImageRecognitionService(
@@ -237,6 +253,33 @@ async def handle_image_message(bot: Bot, event: Event):
         # 仅处理私聊图片
         logger.info("[ImagePlugin] 开始识别图片...")
         
+        # 如果是同一提供商，跳过识别，直接下载图片并传递路径
+        if plugin.is_same_provider:
+            logger.info("[ImagePlugin] 启用多模态模式，仅下载图片不进行识别")
+            
+            # 下载所有图片
+            image_paths = []
+            message = event.get_message()
+            for seg in message:
+                if seg.type == "image":
+                    url = seg.data.get("url")
+                    if url:
+                        path = await plugin.download_image(url)
+                        if path:
+                            image_paths.append(path)
+            
+            if image_paths:
+                # 将图片路径附加到事件对象上，供Chat插件使用
+                setattr(event, 'image_paths', image_paths)
+                logger.info(f"[ImagePlugin] 已附加 {len(image_paths)} 张图片路径到事件")
+                
+                # 通知Chat插件恢复处理
+                try:
+                    chat_plugin.set_image_recognizing(queue_key, False)
+                except:
+                    pass
+                return
+
         # 同步识别图片（阻塞等待识别完成）
         results = await plugin.process_images(event)
         

@@ -283,7 +283,7 @@ class ChatPlugin:
         except Exception as e:
             logger.error(f"[ChatPlugin] 初始化失败: {e}")
     
-    async def process_message(self, bot: Bot, event: Event, custom_content: str = None) -> Optional[str]:
+    async def process_message(self, bot: Bot, event: Event, custom_content: str = None, image_paths: list = None) -> Optional[str]:
         """
         处理消息并生成回复（集成完整记忆系统）
         
@@ -291,6 +291,7 @@ class ChatPlugin:
             bot: Bot实例
             event: 事件对象
             custom_content: 自定义消息内容（用于队列合并后的消息）
+            image_paths: 图片路径列表
         """
         try:
             # 检查适配器
@@ -336,13 +337,37 @@ class ChatPlugin:
             # 读取角色设定
             system_prompt = self._load_avatar_prompt(avatar_name)
             
+            # 处理图片数据
+            image_data = None
+            if image_paths:
+                try:
+                    # 仅处理第一张图片
+                    import base64
+                    from PIL import Image
+                    import io
+                    
+                    img_path = image_paths[0]
+                    # 简单读取并编码
+                    with open(img_path, "rb") as f:
+                        # 简单的压缩逻辑
+                        with Image.open(f) as img:
+                            if img.mode in ("RGBA", "P"):
+                                img = img.convert("RGB")
+                            buffer = io.BytesIO()
+                            img.save(buffer, format="JPEG", quality=80)
+                            image_data = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                    logger.info(f"[ChatPlugin] 已加载并编码图片: {img_path}")
+                except Exception as e:
+                    logger.error(f"[ChatPlugin] 图片处理失败: {e}")
+
             # 调用LLM生成回复
             response = await self._generate_response(
                 user_id=user_id,
                 content=content,
                 system_prompt=system_prompt,
                 previous_context=recent_context,
-                core_memory=core_memory_prompt
+                core_memory=core_memory_prompt,
+                image_data=image_data
             )
             
             # 保存到记忆系统
@@ -401,7 +426,8 @@ class ChatPlugin:
         content: str,
         system_prompt: str,
         previous_context: list = None,
-        core_memory: str = None
+        core_memory: str = None,
+        image_data: str = None
     ) -> str:
         """生成AI回复"""
         try:
@@ -411,7 +437,8 @@ class ChatPlugin:
                     user_id=user_id,
                     system_prompt=system_prompt,
                     previous_context=previous_context,
-                    core_memory=core_memory
+                    core_memory=core_memory,
+                    image_data=image_data
                 )
                 return response
             else:
@@ -608,10 +635,14 @@ class ChatPlugin:
             
             current_time = time.time()
             
+            # 检查事件中是否包含图片路径（由ImagePlugin传递）
+            image_paths = getattr(event, 'image_paths', [])
+            
             if queue_key not in self.message_queues:
                 # 创建新队列
                 self.message_queues[queue_key] = {
                     'messages': [message_content],
+                    'image_paths': image_paths, # 保存图片路径
                     'bot': bot,
                     'event': event,
                     'last_update': current_time,
@@ -621,6 +652,8 @@ class ChatPlugin:
             else:
                 # 添加到现有队列
                 self.message_queues[queue_key]['messages'].append(message_content)
+                if image_paths:
+                    self.message_queues[queue_key].setdefault('image_paths', []).extend(image_paths)
                 self.message_queues[queue_key]['last_update'] = current_time
                 logger.info(f"[MessageQueue] 追加消息 - 用户: {user_id}, 当前消息数: {len(self.message_queues[queue_key]['messages'])}")
             
@@ -692,12 +725,24 @@ class ChatPlugin:
             bot = queue_data['bot']
             event = queue_data['event']
             
+            image_paths = queue_data.get('image_paths', [])
+            
+            # 过滤掉纯URL消息（如果存在图片）
+            filtered_messages = []
+            if image_paths:
+                for msg in messages:
+                    if msg.strip().startswith(('http://', 'https://')) and ' ' not in msg.strip():
+                        continue
+                    filtered_messages.append(msg)
+            else:
+                filtered_messages = messages
+
             # 合并消息
-            combined_message = "；".join(messages)
-            logger.info(f"[MessageQueue] 处理队列 - 消息数: {len(messages)}, 合并后: {combined_message[:50]}...")
+            combined_message = "；".join(filtered_messages)
+            logger.info(f"[MessageQueue] 处理队列 - 消息数: {len(messages)}, 图片数: {len(image_paths)}, 合并后: {combined_message[:50]}...")
             
             # 处理合并后的消息
-            response = await self.process_message(bot, event, combined_message)
+            response = await self.process_message(bot, event, combined_message, image_paths=image_paths)
             
             if response:
                 await asyncio.sleep(0.5)
