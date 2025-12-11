@@ -159,8 +159,11 @@ class LLMService:
                 {"role": "user", "content": f"请严格按照system指令，处理以下对话内容：\n---\n{message}\n---"}
             ]
         else: # 普通对话任务
-            if previous_context and user_id not in self.chat_contexts:
+            # 【修复】始终使用传入的 previous_context 更新上下文，确保同步（例如AutoSend写入的记录）
+            if previous_context:
                 self.chat_contexts[user_id] = previous_context
+            elif user_id not in self.chat_contexts:
+                self.chat_contexts[user_id] = []
             
             # 先计算时间
             now = datetime.datetime.now()
