@@ -328,11 +328,12 @@ class ChatPlugin:
                 core_memory_prompt = ""
             
             # 获取最近对话上下文
+            # 【修复】始终从记忆服务加载最新上下文，以同步AutoSend等外部写入的记录
             recent_context = []
-            if self.memory_service and self.llm_service and user_id not in self.llm_service.chat_contexts:
+            if self.memory_service:
                 recent_context = self.memory_service.get_recent_context(avatar_name, user_id)
                 if recent_context:
-                    logger.info(f"[ChatPlugin] 从记忆加载了 {len(recent_context)//2} 轮历史对话")
+                    logger.debug(f"[ChatPlugin] 从记忆加载了 {len(recent_context)//2} 轮历史对话")
             
             # 读取角色设定
             system_prompt = self._load_avatar_prompt(avatar_name)
